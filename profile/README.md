@@ -57,11 +57,11 @@ Data flows roughly like this: a project's real-world monitoring data (satellite 
 
 | Repo | Purpose | Status |
 |---|---|---|
-| [`contracts`](../contracts) | Core Soroban smart contracts: credit registry, tokenization, marketplace, retirement, ZK proof verification | Active |
-| [`zk-circuits`](../zk-circuits) | Zero-knowledge circuits for private, verifiable MRV proofs | Active |
-| [`oracle-node`](../oracle-node) | Off-chain service that ingests MRV data and generates/submits proofs | Active |
-| [`sdk-js`](../sdk-js) | TypeScript SDK for wallets, dapps, and integrators | Active |
-| [`web-app`](../web-app) | Public marketplace frontend | Active |
+| [`contracts`](../contracts) | Core Soroban smart contracts: credit registry, tokenization, marketplace, retirement, ZK proof verification | **Testnet deployed** — all 5 contracts live; registry, credit-token, marketplace, retirement verified end-to-end |
+| [`zk-circuits`](../zk-circuits) | Zero-knowledge circuits for private, verifiable MRV proofs | **Partial** — `reduction_threshold` circuit working (Groth16, ~180k constraints); `group_membership` and `range_proof` deferred |
+| [`oracle-node`](../oracle-node) | Off-chain service that ingests MRV data and generates/submits proofs | **Working** — single-signer manual-audit pipeline mints real credits on testnet via Groth16 proof |
+| [`sdk-js`](../sdk-js) | TypeScript SDK for wallets, dapps, and integrators | **Working** — registry, credits, marketplace, retirement modules verified against testnet; limit orders and shielded retirement deferred |
+| [`web-app`](../web-app) | Public marketplace frontend | **Working** — project explorer, trade page, wallet connection on testnet; portfolio dashboard and public ledger pages deferred |
 
 Each repo has its own detailed README with setup instructions, architecture notes, and contribution guidelines.
 
@@ -78,12 +78,12 @@ Each repo has its own detailed README with setup instructions, architecture note
 
 ## Getting started
 
-If you want to run the whole stack locally, the fastest path is:
+Contracts are already deployed on [Stellar testnet](https://developers.stellar.org/docs/networks). See [`contracts/README.md`](../contracts#deploying) for canonical addresses. To run the full stack:
 
-1. Clone `contracts` and deploy to Soroban [Futurenet/Testnet](https://developers.stellar.org/docs/networks) following its README.
-2. Clone `sdk-js`, point it at your deployed contract IDs.
-3. Clone `web-app`, configure it to use your local `sdk-js` build.
-4. Optionally run `oracle-node` and `zk-circuits` if you want to exercise the full MRV → proof → mint pipeline; otherwise the contracts repo includes a mock minting path for frontend development.
+1. Clone `sdk-js`, `npm install`, and point it at the testnet contract addresses (see the README's Quickstart).
+2. Clone `web-app`, `pnpm install`, copy `.env.example` to `.env.local`, and `pnpm run dev`.
+3. Connect a testnet wallet (Freighter) and browse projects, trade, or retire credits.
+4. To exercise the oracle → proof → mint pipeline, clone `oracle-node` and `zk-circuits` and follow their READMEs.
 
 Each repo's README has copy-pasteable setup steps.
 
@@ -91,7 +91,25 @@ Each repo's README has copy-pasteable setup steps.
 
 ## Status
 
-This is an early-stage, actively developed project. Contract interfaces, proof formats, and SDK APIs may change without notice until we tag a `v1.0.0` release across the org. Do not use these contracts to custody real value without an independent security audit.
+Testnet-deployed core loop working end to end: oracle mint → trade → retire → visible on public ledger.
+
+### What works today
+
+- **Full credit lifecycle on testnet:** oracle ingests MRV data → ZK proof generated → credits minted on-chain → traded via AMM marketplace → retired → retirement visible on public ledger.
+- **Wallet-connected frontend:** connect Freighter, browse projects, get quotes, execute swaps against real testnet contracts.
+- **One ZK circuit working:** `reduction_threshold` generates and verifies Groth16 proofs (~180k constraints).
+- **SDK verified against testnet:** typed TypeScript client for all core contract interactions.
+
+### What's still open
+
+- Limit order book (place, cancel, fill) in marketplace
+- Shielded retirement flow (requires `group_membership` ZK circuit + multi-contributor ceremony)
+- Second and third ZK circuits (`group_membership`, `range_proof`)
+- Multi-oracle federation and satellite/IoT connector support in `oracle-node`
+- Portfolio dashboard and public retirement ledger pages in `web-app`
+- Independent security audit before mainnet
+
+Contract interfaces, proof formats, and SDK APIs may change without notice until we tag a `v1.0.0` release across the org. Do not use these contracts to custody real value without an independent security audit.
 
 ## License
 
